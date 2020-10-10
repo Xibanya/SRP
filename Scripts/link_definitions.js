@@ -1,6 +1,5 @@
 var DIRECTORY_CLASS = "directory";
 var SHADER_DIRECTORY_ID = "shader-directory";
-var INCLUDE_DIRECTORY_ID = "hdrp-shaderpass-includes";
 var PRETTYPRINT_CLASS = "prettyprint";
 var LINENUMS_CLASS = "linenums";
 var INCLUDES_TABLE = "Includes";
@@ -36,9 +35,6 @@ var URL_P = `<a href="https://www.patreon.com/teamdogpit"><i class="fa fab fa-pa
 var EXTERNAL_LINKS = `${URL_REPO} ${URL_T} ${URL_P}`;
 
 AddScript(SQL_PATH + SQL_SCRIPT, SQL_SCRIPT_ID);
-
-var INCLUDES_DIRECTORIES = '{ "Directories":[' +
-'{ "ID": 1, "Name": "HDRP ShaderPass", "Path": "HDRP/Runtime/RenderPipeline/ShaderPass/", "ElementID": "hdrp-shaderpass-includes" }]}';
 
 var SHADER_DIRECTORIES = '{ "Directories":[' +
 '{ "ID": 1, "Name": "Default Resources", "Path": "BuiltinShaders/DefaultResources/", "ElementID": "shader-directory" },' +
@@ -77,35 +73,32 @@ initSqlJs({ locateFile: filename => SQL_PATH + `${filename}` }).then(function (S
    
 function IncludesDirectory()
 {
-    var directory = document.getElementById(INCLUDE_DIRECTORY_ID);
-    if (directory != null)
-    {
-        directoryTable = JSON.parse(INCLUDES_DIRECTORIES);
-        for (var i = 0; i < directoryTable.Directories.length; i++)
+    var dbDirectoryTable = db.exec(`SELECT * FROM ${DIRECTORIES_TABLE}`);
+    var table = JSON.parse(JSON.stringify(dbDirectoryTable));
+    var lastElement;
+    var NAME = 2;
+    var ELEMENT = 3;
+    var PATH = 1;
+    table[0].values.forEach(row => {
+        var accent = document.createElement('div');
+        accent.className = "accent";
+        if (row[0] == 1) 
         {
-            var row = directoryTable.Directories[i];
-            if (row.ID == 1) 
-            {
-                var header = HeaderBefore(3, row.Name, directory);
-                var accent = document.createElement('div');
-                accent.className = "accent";
-                InsertAfter(accent, header);
-            }
-            else
-            {
-                var lastDirectory = document.getElementById(directoryTable.Directories[i - 1].ElementID);
-                var header = HeaderAfter(3, row.Name,  lastDirectory);
-                var accent = document.createElement('div');
-                accent.className = "accent";
-                InsertAfter(accent, header);
-                var newSection = DirectoryAfter(row.ElementID, accent);
-            }
-            var includes = db.exec(
-                `SELECT ID, Name, URL, Extension FROM ${INCLUDES_TABLE} WHERE URL IS ` + 
-                `'${row.Path}' ORDER BY Name ASC`);
-            GenerateDirectory(includes, row.ElementID);
+            var header = HeaderBefore(3, row[NAME], document.getElementById(row[ELEMENT]));
+            InsertAfter(accent, header);
+            lastElement = header;
         }
-    }
+        else
+        {
+            var header = HeaderAfter(3, row[NAME], lastElement);
+            InsertAfter(accent, header);
+            lastElement = DirectoryAfter(row[ELEMENT], accent);
+        }
+        var includes = db.exec(
+            `SELECT ID, Name, URL, Extension FROM ${INCLUDES_TABLE} WHERE URL IS ` + 
+            `'${row[PATH]}' ORDER BY Name ASC`);
+        GenerateDirectory(includes, row[ELEMENT], true);
+    });
 }
 function ShaderDirectory()
 {
@@ -135,13 +128,13 @@ function ShaderDirectory()
             var shaders = db.exec(
                 `SELECT * FROM ${SHADERS_TABLE} WHERE FilePath IS ` + 
                 `'${row.Path}' ORDER BY FilePath, FileName ASC`);
-                GenerateDirectory(shaders, row.ElementID);
+                GenerateDirectory(shaders, row.ElementID, false);
         }
     }
 }
 
 //generate links to members of the provided table within the DOM element of the specified ID
-function GenerateDirectory(sqlTable, elementID)
+function GenerateDirectory(sqlTable, elementID, isInclude)
 {
     if (sqlTable != null)
     {
@@ -150,30 +143,30 @@ function GenerateDirectory(sqlTable, elementID)
         {
             var addLinenums = node.classList.contains(LINENUMS_CLASS)? true : false;
             var increment = 0;
-            var NAME = 1;
-            var FILE_PATH = 2;
             var directoryList = DirectoryList(addLinenums);
-            table = JSON.parse(JSON.stringify(sqlTable));
+            var table = JSON.parse(JSON.stringify(sqlTable));
             table[0].values.forEach(row => {
                     var listItem = ListItem(directoryList, increment);
                     var link = DirectoryLink(row);
                     listItem.appendChild(link);
-                    if (elementID.includes("shader")) 
+                    if (isInclude) listItem.innerHTML += row[3];
+                    else
                     {
-                        if (window.location.href.includes(row[FILE_PATH] + row[FILE_NAME])) 
+                        if (window.location.href.includes(row.FilePath + row.FileName)) 
                         {
                             isSource = true;
-                            sourceName = row[0];
-                            SetTitle(row[0]);
+                            sourceName = row.ShaderName;
+                            SetTitle(row.ShaderName);
                         }
                         listItem.innerHTML += " " + row[0];
                     }
-                    else if (elementID.includes("includes")) listItem.innerHTML += row[EXTENSION];
                     increment++;
             });
             node.appendChild(directoryList);
         }
+        else console.log("No such element " + elementID + "!");
     }
+    else console.log("Table for " + elementID + " is null!");
 }
 function DirectoryLink(row)
 {
