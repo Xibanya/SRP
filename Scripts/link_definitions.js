@@ -26,7 +26,7 @@ var LIBRARY_PATH = "https://xibanya.github.io/SRP/Library/";
 var SQL_SCRIPT_ID = "SQLScript";
 var SQL_SCRIPT = "sql-wasm.js";
 var SQL_PATH = "https://kripken.github.io/sql.js/dist/";
-var DB_PATH = "https://xibanya.github.io/SRP/Data/Definitions.db";
+var DB_PATH = "https://xibanya.github.io/SRP/Data/HDRPDefinitions.db";
 var db = null;
 
 var URL_INDEX = `<a href="https://xibanya.github.io/SRP/"><i class="fa fa-home"></i></a>`;
