@@ -1,6 +1,6 @@
 var DIRECTORY_CLASS = "directory";
 var SHADER_DIRECTORY_ID = "shader-directory";
-var INCLUDE_DIRECTORY_ID = "includes-core";
+var INCLUDE_DIRECTORY_ID = "hdrp-shaderpass-includes";
 var PRETTYPRINT_CLASS = "prettyprint";
 var LINENUMS_CLASS = "linenums";
 var INCLUDES_TABLE = "Includes";
@@ -38,10 +38,7 @@ var EXTERNAL_LINKS = `${URL_REPO} ${URL_T} ${URL_P}`;
 AddScript(SQL_PATH + SQL_SCRIPT, SQL_SCRIPT_ID);
 
 var INCLUDES_DIRECTORIES = '{ "Directories":[' +
-'{ "ID": 1, "Name": "Core", "Path": "Core/", "ElementID": "includes-core" },' +
-'{ "ID": 2, "Name": "Core Sampling", "Path": "Core/Sampling/", "ElementID": "sampling-includes-directory" },' +
-'{ "ID": 3, "Name": "HDRP ShaderPass", "Path": "HDRP/Runtime/RenderPipeline/ShaderPass/", "ElementID": "hdrp-shaderpass-includes" },' + 
-'{ "ID": 4, "Name": "HDRP Lit", "Path": "HDRP/Material/Lit/", "ElementID": "hdrp-includes-lit" }]}';
+'{ "ID": 1, "Name": "HDRP ShaderPass", "Path": "HDRP/Runtime/RenderPipeline/ShaderPass/", "ElementID": "hdrp-shaderpass-includes" }]}';
 
 var SHADER_DIRECTORIES = '{ "Directories":[' +
 '{ "ID": 1, "Name": "Default Resources", "Path": "BuiltinShaders/DefaultResources/", "ElementID": "shader-directory" },' +
