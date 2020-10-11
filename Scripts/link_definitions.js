@@ -96,7 +96,7 @@ function IncludesDirectory()
         }
         var includes = db.exec(
             `SELECT ID, Name, URL, Extension FROM ${INCLUDES_TABLE} WHERE URL IS ` + 
-            `'${row[PATH]}' ORDER BY Name ASC`);
+            `'${row[PATH]} OR Group IS ${row[0]}' ORDER BY Name ASC`);
         GenerateDirectory(includes, row[ELEMENT], true);
     });
 }
