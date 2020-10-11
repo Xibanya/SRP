@@ -37,7 +37,7 @@ request.send();
 function LoadShader()
 {
     var target = document.getElementById(INPUT_FIELD_ID).value;
-    var destination = "/Tools/Viewer.html?target=" + target;
+    var destination = BASE + "Tools/Viewer.html?target=" + target;
     self.location.replace(destination);
 }
 // ----- URI PARAMETERS -----//
@@ -206,7 +206,7 @@ function AddPreview(row, userInput)
             var name = links[i].getAttribute("name");
             if (name != null && name != "")
             {
-                links[i].href = `/Library/${url}${shaderName}.html#${links[i].getAttribute("name")}`;
+                links[i].href = `${BASE}Library/${url}${shaderName}.html#${links[i].getAttribute("name")}`;
             }
         }
     }
