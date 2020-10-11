@@ -16,12 +16,12 @@ var isSource = false;
 var sourceName = null;
 var versionNumber = DEFAULT_VERSION;
 
-var SCRIPTS_PATH = "./Scripts/";
+var SCRIPTS_PATH = "../Scripts/";
 
-var STYLE_PATH = "./Styles/Style.css";
+var STYLE_PATH = "../Styles/Style.css";
 var STYLE_ID = "MainStyle";
 
-var LIBRARY_PATH = "./Library/";
+var LIBRARY_PATH = "../Library/";
 
 var SQL_SCRIPT_ID = "SQLScript";
 var SQL_SCRIPT = "sql-wasm.js";
