@@ -1,4 +1,5 @@
 var DIRECTORY_CLASS = "directory";
+var INCLUDES_DIRECTORY_ID = "includes-group";
 var SHADER_DIRECTORY_ID = "shader-directory";
 var PRETTYPRINT_CLASS = "prettyprint";
 var LINENUMS_CLASS = "linenums";
@@ -15,12 +16,12 @@ var isSource = false;
 var sourceName = null;
 var versionNumber = DEFAULT_VERSION;
 
-var SCRIPTS_PATH = "https://xibanya.github.io/SRP/Scripts/";
+var SCRIPTS_PATH = "./Scripts/";
 
-var STYLE_PATH = "https://xibanya.github.io/SRP/Styles/Style.css";
+var STYLE_PATH = "./Styles/Style.css";
 var STYLE_ID = "MainStyle";
 
-var LIBRARY_PATH = "https://xibanya.github.io/SRP/Library/";
+var LIBRARY_PATH = "./Library/";
 
 var SQL_SCRIPT_ID = "SQLScript";
 var SQL_SCRIPT = "sql-wasm.js";
@@ -59,10 +60,10 @@ initSqlJs({ locateFile: filename => SQL_PATH + `${filename}` }).then(function (S
             {
                 VerboseLog("Loaded DB");
                 IncludesDirectory();
-                ShaderDirectory();
                 LinkIncludes();
                 MakeLinks();
                 FindIfSource();
+                AddFooter();
             }
             else console.log("DB Null");
         }, 200);
@@ -71,72 +72,61 @@ initSqlJs({ locateFile: filename => SQL_PATH + `${filename}` }).then(function (S
     });
 }, 200);
    
+function Tableify(strigified)
+{
+    var array = [];
+    for (var i = 0; i < strigified[0].values.length; i++)
+    {
+        array.push(strigified[0].values[i]);
+    }
+    return array;
+}
+class Group {
+    constructor(row)
+    {
+        this.ID = row[0];
+        this.Path = row[1];
+        this.Name = row[2];
+        this.ElementID = row[3];
+    }
+}
+
 function IncludesDirectory()
 {
-    var dbDirectoryTable = db.exec(`SELECT * FROM ${DIRECTORIES_TABLE}`);
-    var table = JSON.parse(JSON.stringify(dbDirectoryTable));
+    var dbDirectoryTable = db.exec(`SELECT * FROM ${DIRECTORIES_TABLE} ORDER BY ID ASC`);
+    var table = Tableify(JSON.parse(JSON.stringify(dbDirectoryTable)));
     var lastElement;
-    var NAME = 2;
-    var ELEMENT = 3;
-    var PATH = 1;
-    table[0].values.forEach(row => {
-        var accent = document.createElement('div');
-        accent.className = "accent";
-        if (row[0] == 0) 
+    for (var i = 0; i < table.length; i ++)
+    {
+        var row = new Group(table[i]);
+        if (i == 0) 
         {
-            var header = HeaderBefore(3, row[NAME], document.getElementById(row[ELEMENT]));
-            InsertAfter(accent, header);
-            lastElement = header;
+            lastElement = document.getElementById(row.ElementID);
+            if (lastElement == null) return;
+            var header = HeaderBefore(3, row.Name, lastElement, true);
+            var accent = document.getElementById(row.Name + "-accent");
+            InsertAfter(lastElement, accent);
         }
         else
         {
-            var header = HeaderAfter(3, row[NAME], lastElement);
-            InsertAfter(accent, header);
-            lastElement = DirectoryAfter(row[ELEMENT], accent);
+            var header = HeaderAfter(3, row.Name, lastElement, true);
+            var accent =  document.getElementById(row.Name + "-accent");
+            lastElement = DirectoryAfter(row.ElementID, accent);
         }
-        var includes = db.exec(
-            `SELECT ID, Name, URL, Extension FROM ${INCLUDES_TABLE} WHERE URL IS ` + 
-            `'${row[PATH]} OR Group IS ${row[0]}' ORDER BY Name ASC`);
-        GenerateDirectory(includes, row[ELEMENT], true);
-    });
-}
-function ShaderDirectory()
-{
-    var directory = document.getElementById(SHADER_DIRECTORY_ID);
-    if (directory != null)
-    {
-        directoryTable = JSON.parse(SHADER_DIRECTORIES);
-        for (var i = 0; i < directoryTable.Directories.length; i++)
-        {
-            var row = directoryTable.Directories[i];
-            if (row.ID == 1) 
-            {
-                var header = HeaderBefore(3, row.Name, directory);
-                var accent = document.createElement('div');
-                accent.className = "accent";
-                InsertAfter(accent, header);
-            }
-            else
-            {
-                var lastDirectory = document.getElementById(directoryTable.Directories[i - 1].ElementID);
-                var header = HeaderAfter(3, row.Name, lastDirectory);
-                var accent = document.createElement('div');
-                accent.className = "accent";
-                InsertAfter(accent, header);
-                var newSection = DirectoryAfter(row.ElementID, accent);
-            }
-            var shaders = db.exec(
-                `SELECT * FROM ${SHADERS_TABLE} WHERE FilePath IS ` + 
-                `'${row.Path}' ORDER BY FilePath, FileName ASC`);
-                GenerateDirectory(shaders, row.ElementID, false);
-        }
+        var sql =  `SELECT ID, Name, URL, Extension FROM ${INCLUDES_TABLE} ` +
+                    `WHERE URL LIKE '${row.Path}%' ` +
+                    `ORDER BY Name ASC`;
+        var includes = db.exec(sql);
+        var includesTable = Tableify(JSON.parse(JSON.stringify(includes)));
+        
+        GenerateDirectory(includesTable, row.ElementID, true);
     }
 }
 
 //generate links to members of the provided table within the DOM element of the specified ID
-function GenerateDirectory(sqlTable, elementID, isInclude)
+function GenerateDirectory(table, elementID, isInclude)
 {
-    if (sqlTable != null)
+    if (table != null)
     {
         var node = document.getElementById(elementID);
         if (node != null)
@@ -144,24 +134,25 @@ function GenerateDirectory(sqlTable, elementID, isInclude)
             var addLinenums = node.classList.contains(LINENUMS_CLASS)? true : false;
             var increment = 0;
             var directoryList = DirectoryList(addLinenums);
-            var table = JSON.parse(JSON.stringify(sqlTable));
-            table[0].values.forEach(row => {
-                    var listItem = ListItem(directoryList, increment);
-                    var link = DirectoryLink(row);
-                    listItem.appendChild(link);
-                    if (isInclude) listItem.innerHTML += row[3];
-                    else
+            for (var i = 0; i < table.length; i ++)
+            {
+                var row = table[i];
+                var listItem = ListItem(directoryList, increment);
+                var link = DirectoryLink(row);
+                listItem.appendChild(link);
+                if (isInclude) listItem.innerHTML += row[3];
+                else
+                {
+                    if (window.location.href.includes(row.FilePath + row.FileName)) 
                     {
-                        if (window.location.href.includes(row.FilePath + row.FileName)) 
-                        {
-                            isSource = true;
-                            sourceName = row.ShaderName;
-                            SetTitle(row.ShaderName);
-                        }
-                        listItem.innerHTML += " " + row[0];
+                        isSource = true;
+                        sourceName = row.ShaderName;
+                        SetTitle(row.ShaderName);
                     }
-                    increment++;
-            });
+                    listItem.innerHTML += " " + row[0];
+                }
+                increment++;
+            }
             node.appendChild(directoryList);
         }
         else console.log("No such element " + elementID + "!");
@@ -280,7 +271,6 @@ function FindIfSource()
             else SetTitle(shResult.FileName);
         }
     }
-    AddFooter();
 }
 function SetTitle(titleText)
 {
@@ -415,24 +405,46 @@ function InsertAfter(newNode, referenceNode)
 {
     referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
-function HeaderBefore(size, title, referenceNode)
+function HeaderBefore(size, title, referenceNode, withAccent)
 {
     var header = document.createElement('h' + size);
     header.innerText = title
     referenceNode.parentNode.insertBefore(header, referenceNode);
+    if (withAccent)
+    {
+        var accent = document.createElement('div');
+        accent.className = "accent";
+        accent.id = `${title}-accent`;
+        InsertAfter(accent, header);
+    }
     return header;
 }
-function HeaderInto(size, title, referenceNode)
+function HeaderInto(size, title, referenceNode, withAccent)
 {
     var newID = `${title}-header`;
     referenceNode.innerHTML += `<h${size} id="${newID}">${title}</h${size}>`;
-    return document.getElementById(newID);
+    var header = document.getElementById(newID);
+    if (withAccent)
+    {
+        var accent = document.createElement('div');
+        accent.className = "accent";
+        accent.id = `${title}-accent`;
+        InsertAfter(accent, header);
+    }
+    return header;
 }
-function HeaderAfter(size, title, referenceNode)
+function HeaderAfter(size, title, referenceNode, withAccent)
 {
     var header = document.createElement('h' + size);
     header.innerText = title
     InsertAfter(header, referenceNode);
+    if (withAccent)
+    {
+        var accent = document.createElement('div');
+        accent.className = "accent";
+        accent.id = `${title}-accent`;
+        InsertAfter(accent, header);
+    }
     return header;
 }
 function DirectoryAfter(uniqueID, referenceNode)

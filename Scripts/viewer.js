@@ -37,7 +37,7 @@ request.send();
 function LoadShader()
 {
     var target = document.getElementById(INPUT_FIELD_ID).value;
-    var destination = "https://xibanya.github.io/SRP/Tools/Viewer.html?target=" + target;
+    var destination = "./Tools/Viewer.html?target=" + target;
     self.location.replace(destination);
 }
 // ----- URI PARAMETERS -----//
@@ -134,7 +134,7 @@ function FullTextSearch()
        ShowResults();
         var includeName = inputField.value;
         var result = db.exec(
-            `SELECT Name, File, Extension FROM ${INCLUDES_TABLE} ` + 
+            `SELECT Name, File, Extension, URL FROM ${INCLUDES_TABLE} ` + 
             `WHERE File LIKE '%${includeName}%';`);
         var table = JSON.parse(JSON.stringify(result));
         matches = 0;
@@ -160,6 +160,7 @@ function AddPreview(row, userInput)
     var shaderName = row[0];
     var shaderFile = row[1];
     var shaderExt = row[2];
+    var url = row[3];
 
     if (shaderFile.match(regex))
     {
@@ -187,18 +188,27 @@ function AddPreview(row, userInput)
         if (snippetEndPosition < shaderFile.length - 3) snippetText += "<i> . . . </i>";
 
         var fileLink = `<span class="highlight" id="${originalTextFoundByRegex}">${originalTextFoundByRegex}</span>`;
-       var linkFile = shaderFile.replace(regex, fileLink);
+        var linkFile = shaderFile.replace(regex, fileLink);
 
         var uniqueID = `${originalTextFoundByRegex}-link`;
         var highlightTag = `<a class="highlight" id="${uniqueID}">${originalTextFoundByRegex}</a>`;
         snippetText = snippetText.replace(regex, highlightTag);
-
         var preview = document.createElement('pre');
         preview.classList = "preview";
         newNode.appendChild(preview);
         preview.innerHTML = snippetText;
         var highlightLink = document.getElementById(uniqueID);
         SubscribeLink(highlightLink, shaderName, shaderFile, shaderExt);
+
+        var links = preview.getElementsByTagName("a");
+        for (var i = 0; i < links.length; i++)
+        {
+            var name = links[i].getAttribute("name");
+            if (name != null && name != "")
+            {
+                links[i].href = `../Library/${url}${shaderName}.html#${links[i].getAttribute("name")}`;
+            }
+        }
     }
 }
 
@@ -276,7 +286,11 @@ function GetRequiredNodes()
     CreateNoResultsMsg();
 }
 
-function ResultsHidden() { return resultsContainer.parentNode.classList.contains("hidden");}
+function ResultsHidden() 
+{ 
+    GetRequiredNodes();
+    return resultsContainer.parentNode.classList.contains("hidden");
+}
 function HideResults() 
 { 
     resultsContainer.parentNode.classList = "directory search-container hidden"; 
@@ -284,6 +298,7 @@ function HideResults()
 }
 function ShowResults() 
 { 
+    GetRequiredNodes();
     resultsContainer.parentNode.classList = "directory search-container"; 
     toggleButton.innerText = "Hide Results";
 }
