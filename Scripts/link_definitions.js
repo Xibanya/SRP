@@ -82,7 +82,7 @@ function IncludesDirectory()
     table[0].values.forEach(row => {
         var accent = document.createElement('div');
         accent.className = "accent";
-        if (row[0] == 1) 
+        if (row[0] == 0) 
         {
             var header = HeaderBefore(3, row[NAME], document.getElementById(row[ELEMENT]));
             InsertAfter(accent, header);
